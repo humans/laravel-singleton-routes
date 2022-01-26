@@ -1,0 +1,27 @@
+{
+    "name": "humans/laravel-singleton-routes",
+    "description": "Add singleton routes for Laravel.",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Humans\\SingletonRoutes\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Jaggy",
+            "email": "jaggy@humans.ph"
+        }
+    ],
+    "require": {
+        "php": "^8.0"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Humans\\SingletonRoutes\\SingletonRoutesServiceProvider"
+            ]
+        }
+    }
+}
