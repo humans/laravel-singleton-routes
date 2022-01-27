@@ -3,6 +3,7 @@
 namespace Humans\SingletonRoutes;
 
 use Illuminate\Routing\RouteRegistrar;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Traits\ForwardsCalls;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Route;
@@ -14,6 +15,8 @@ use Illuminate\Support\Str;
 class SingletonRoute
 {
     use ForwardsCalls;
+
+    protected RouteRegistrar $registrar;
 
     protected const SUPPORTED_ACTIONS = [
         'show', 'create', 'store', 'edit', 'update', 'destroy',
@@ -27,7 +30,10 @@ class SingletonRoute
 
     protected string $path;
 
-    protected RouteRegistrar $registrar;
+    /**
+     * @var array<string, string>
+     */
+    protected array $parameters = [];
 
     public function __construct(string $name, string $controller)
     {
@@ -57,6 +63,23 @@ class SingletonRoute
         return $this;
     }
 
+    public function parameter(string $from, string $to): self
+    {
+        $this->parameters[$from] = $to;
+
+        return $this;
+    }
+
+    /**
+     * @param array $parameters<string, string>
+     */
+    public function parameters(array $parameters): self
+    {
+        $this->parameters = array_replace($this->parameters, $parameters);
+
+        return $this;
+    }
+
     protected function getResource(): string
     {
         if (! $this->isNestedResource()) {
@@ -66,22 +89,31 @@ class SingletonRoute
         return Str::of($this->name)->after('.');
     }
 
+    protected function getParameter(string $parameter): string
+    {
+        return $this->parameters[$parameter] ?? $parameter;
+    }
+
     protected function getPrefix(): string
     {
         if (! $this->isNestedResource()) {
             return '';
         }
 
-        return sprintf(
-            '%s/{%s}',
-            $parent = Str::of($this->name)->before('.'),
-            $parent->singular(),
-        );
+        return Str::of($this->name)
+            ->explode('.')
+            ->pipe(fn ($resources) => tap($resources)->pop())
+            ->map(fn ($resource) => [$resource, Str::of($resource)->singular()->camel()])
+            ->mapSpread(function (string $route, string $parameter) {
+                return [$route, '{'.$this->getParameter($parameter).'}'];
+            })
+            ->flatten()
+            ->implode('/');
     }
 
     protected function getPath(): string
     {
-        return $this->path ??= Str::after($this->name, '.');
+        return $this->path ??= Str::afterLast($this->name, '.');
     }
 
     protected function getActions(): array
