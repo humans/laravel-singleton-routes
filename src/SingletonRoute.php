@@ -23,8 +23,6 @@ class SingletonRoute
 
     protected string $name;
 
-    protected string $resource;
-
     protected string $controller;
 
     protected string $path;
@@ -83,7 +81,7 @@ class SingletonRoute
 
     protected function getPath(): string
     {
-        return $this->path ??= $this->name;
+        return $this->path ??= Str::after($this->name, '.');
     }
 
     protected function getActions(): array
